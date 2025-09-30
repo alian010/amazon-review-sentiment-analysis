@@ -1,8 +1,7 @@
-# amazon-review-sentiment-analysis
 # Sentiment Analysis on Amazon Product Reviews
 
-Binary sentiment classification on Amazon product **review text** (`reviewText`) with labels **`Positive`** ∈ {0, 1}.
-The notebook walks through dataset → preprocessing → vectorization → multiple models → evaluation → hyperparameter tuning → comparison → conclusions.
+Binary sentiment classification on Amazon product **review text** (`reviewText`) with labels **`Positive` ∈ {0,1}**.
+This repo includes a complete, reproducible notebook covering: dataset → preprocessing → TF-IDF vectorization → multiple models → evaluation → tuning → comparison → conclusions.
 
 **Dataset (public CSV):**
 `https://raw.githubusercontent.com/rashakil-ds/Public-Datasets/refs/heads/main/amazon.csv`
@@ -15,24 +14,20 @@ The notebook walks through dataset → preprocessing → vectorization → multi
 * [Repository Structure](#repository-structure)
 * [Environment & Setup](#environment--setup)
 * [Data](#data)
-* [Workflow](#workflow)
-* [Quickstart](#quickstart)
-* [Models](#models)
-* [Training & Tuning](#training--tuning)
-* [Evaluation](#evaluation)
-* [Comparative Analysis](#comparative-analysis)
-* [Reproducibility](#reproducibility)
+* [Methodology](#methodology)
+* [Results](#results)
+* [How to Reproduce](#how-to-reproduce)
+* [Model Cards (Concise)](#model-cards-concise)
 * [Troubleshooting](#troubleshooting)
-* [Save / Load Model](#save--load-model)
-* [License & Use](#license--use)
+* [Next Steps](#next-steps)
+* [License](#license)
 
 ---
 
 ## Project Overview
 
-* **Goal:** Predict **binary sentiment** (1 = positive, 0 = negative) from the free-text review.
-* **Why:** Classify product feedback at scale to improve product insights and customer experience.
-* **Approach:** TF-IDF features with several lightweight classifiers; tune best models; report metrics and confusion matrices.
+* **Goal:** Predict review sentiment (0 = negative, 1 = positive) from text.
+* **Approach:** Clean & stem text → TF-IDF (uni/bi-grams) → classical ML (LinearSVC, Logistic Regression, MultinomialNB, RandomForest) → evaluate with Accuracy/Precision/Recall/F1 + confusion matrices → tune best models with GridSearchCV.
 
 ---
 
@@ -41,7 +36,7 @@ The notebook walks through dataset → preprocessing → vectorization → multi
 ```
 .
 ├─ notebooks/
-│  └─ Sentiment Analysis on Amazon Product Reviews.ipynb   # main, step-by-step notebook
+│  └─ Sentiment Analysis on Amazon Product Reviews.ipynb   # main end-to-end notebook
 ├─ models/                                                 # saved models (optional)
 ├─ data/                                                   # optional local cache
 ├─ requirements.txt
@@ -49,7 +44,7 @@ The notebook walks through dataset → preprocessing → vectorization → multi
 └─ README.md
 ```
 
-> Submitting coursework? Keeping everything inside `notebooks/` is fine.
+> For coursework submission, keeping everything under `notebooks/` is fine.
 
 ---
 
@@ -66,64 +61,80 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
-**Suggested requirements:**
-
-```
-pandas>=2.0
-numpy>=1.24
-scikit-learn>=1.3
-matplotlib>=3.7
-seaborn>=0.12
-nltk>=3.8
-```
-
+**Suggested versions:**
+`pandas>=2.0`, `numpy>=1.24`, `scikit-learn>=1.3`, `matplotlib>=3.7`, `seaborn>=0.12`, `nltk>=3.8`
 *(Optional)* `imbalanced-learn`, `optuna`, `xgboost`, `lightgbm`, `catboost`
 
 ---
 
 ## Data
 
-* Columns used:
+* **Columns:**
 
-  * **`reviewText`**: raw review (string)
-  * **`Positive`**: label (1 = positive, 0 = negative)
-* The notebook:
+  * `reviewText` — raw review text (string)
+  * `Positive` — binary label (1 positive, 0 negative)
+* **Preprocessing in notebook:**
 
-  * fills missing reviews with empty strings,
-  * **cleans text** (lowercase, strip URLs/HTML, non-letters),
-  * tokenizes + **Porter stemming** (no internet corpora required).
-
----
-
-## Workflow
-
-1. **Dataset overview** — shape, head, label distribution, missingness
-2. **Preprocessing** — cleaning + stemming → train/test split
-3. **Vectorization** — **TF-IDF** with `stop_words='english'`, bigrams, `min_df`, `max_df`
-4. **Model selection** — Logistic Regression, Linear SVM, Multinomial NB, Random Forest
-5. **Training** — fit models on TF-IDF features
-6. **Evaluation** — Accuracy, Precision, Recall, F1, Confusion Matrix
-7. **Tuning** — GridSearchCV for SVM & LR (example)
-8. **Comparison** — table + bar chart of F1
-9. **Conclusions** — findings, challenges, next steps
+  * Fill missing reviews with empty strings
+  * Lowercasing, strip URLs/HTML/non-letters
+  * Tokenize + **Porter stemming** (no internet corpora needed)
+  * Train/test split with stratification
 
 ---
 
-## Quickstart
+## Methodology
+
+1. **Text vectorization:** `TfidfVectorizer(stop_words='english', ngram_range=(1,2), min_df=2, max_df=0.9)`
+2. **Models trained:** LinearSVC, Logistic Regression, Multinomial Naïve Bayes, RandomForest
+3. **Tuning:** GridSearchCV for LinearSVC (`C`, `loss`) and Logistic Regression (`C`, `solver`)
+4. **Metrics:** Accuracy, Precision, Recall, F1 (binary); confusion matrices for each model
+5. **Comparison:** Tabular & bar-chart comparison of F1 scores
+
+---
+
+## Results
+
+| model             | acc     | prec     | rec      | f1       |
+| ----------------- | ------- | -------- | -------- | -------- |
+| LinearSVC         | 0.90575 | 0.925702 | 0.952740 | 0.939026 |
+| LinearSVC (tuned) | 0.90575 | 0.925702 | 0.952740 | 0.939026 |
+| LogReg (tuned)    | 0.89850 | 0.907939 | 0.964555 | 0.935391 |
+| LogReg            | 0.88950 | 0.895056 | 0.968494 | 0.930328 |
+| RandomForest      | 0.87650 | 0.876882 | 0.974729 | 0.923220 |
+| MultinomialNB     | 0.82925 | 0.817571 | 0.998687 | 0.899099 |
+
+**Takeaways**
+
+* **LinearSVC** achieves the best F1 (≈ **0.939**), typical for sparse TF-IDF text.
+* **Logistic Regression** is a very strong, interpretable baseline (F1 up to **0.935** after tuning).
+* **MultinomialNB** has very high recall but lower precision (predicts positive too often).
+* **RandomForest** underperforms on high-dimensional sparse text and can be slower.
+
+**Strengths / Weaknesses (quick)**
+
+* **LinearSVC:** strong on sparse TF-IDF, fast; needs calibration for probabilities.
+* **LogisticRegression:** robust, interpretable; supports calibrated probabilities.
+* **MultinomialNB:** simple/fast; may struggle with large n-gram space (precision drop).
+* **RandomForest:** less suited to sparse, high-dimensional text; slower; risk of overfit.
+
+---
+
+## How to Reproduce
+
+Minimal training block from the notebook:
 
 ```python
-import pandas as pd
+import pandas as pd, numpy as np, re
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report
 
 # Load
 url = "https://raw.githubusercontent.com/rashakil-ds/Public-Datasets/refs/heads/main/amazon.csv"
 df = pd.read_csv(url).fillna({"reviewText": ""})
 
-# Minimal clean (same logic as notebook uses, simplified here)
-import re
+# Simple clean
 def clean(x):
     x = x.lower()
     x = re.sub(r'https?://\\S+|www\\.\\S+',' ', x)
@@ -140,88 +151,60 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # TF-IDF
 tfidf = TfidfVectorizer(stop_words="english", ngram_range=(1,2), min_df=2, max_df=0.9)
-Xtr = tfidf.fit_transform(X_train)
-Xte = tfidf.transform(X_test)
+Xtr = tfidf.fit_transform(X_train); Xte = tfidf.transform(X_test)
 
-# Train a strong baseline (TF-IDF + LR)
-clf = LogisticRegression(max_iter=2000, n_jobs=-1)
+# Train + report
+clf = LinearSVC()
 clf.fit(Xtr, y_train)
 pred = clf.predict(Xte)
-
 print(classification_report(y_test, pred, zero_division=0))
 ```
 
----
-
-## Models
-
-* **Logistic Regression** (strong, fast, interpretable; outputs probabilities)
-* **Linear SVM (LinearSVC)** (often top performer on sparse TF-IDF; needs calibration for probabilities)
-* **Multinomial Naïve Bayes** (very fast; solid baseline)
-* **Random Forest** (included for comparison; not ideal for high-dim, sparse text)
-
-*(Extensions)* Try Gradient Boosting (XGBoost/LightGBM/CatBoost) or neural models (LSTM/GRU/Transformers) if compute allows.
+> For Logistic Regression, replace `LinearSVC()` with `LogisticRegression(max_iter=2000, n_jobs=-1)`.
 
 ---
 
-## Training & Tuning
+## Model Cards (Concise)
 
-* Vectorization: `TfidfVectorizer(ngram_range=(1,2), stop_words='english', min_df=2, max_df=0.9)`
-* Baseline training for each model, then **GridSearchCV** examples for SVM & LR:
+**LinearSVC**
 
-  * `C`, `loss` for LinearSVC
-  * `C`, `solver` for Logistic Regression
+* **Features:** TF-IDF (1–2 grams, English stopwords, min_df=2, max_df=0.9)
+* **Key hyperparams:** `C` tuned ∈ {0.5, 1.0, 2.0}, `loss` ∈ {hinge, squared_hinge}
+* **Pros:** top F1, fast; **Cons:** needs calibration for probabilities
 
----
+**Logistic Regression**
 
-## Evaluation
+* **Key hyperparams:** `C` tuned ∈ {0.5, 1.0, 2.0}; `solver` ∈ {liblinear, lbfgs}
+* **Pros:** interpretable, robust, probability outputs; **Cons:** slightly behind LinearSVC
 
-* Metrics reported:
+**MultinomialNB**
 
-  * **Accuracy**, **Precision**, **Recall**, **F1** (binary)
-  * **Confusion Matrix** heatmaps per model
-* (Optional) Cross-validation via `StratifiedKFold` and `cross_val_score`.
+* **Pros:** ultra fast; **Cons:** precision drop with bigrams/high-dim
 
----
+**RandomForest**
 
-## Comparative Analysis
-
-* Consolidated table of **accuracy/precision/recall/F1** for all models (base + tuned)
-* Bar plot of F1 scores
-* Notes on **speed, accuracy, interpretability**, and suitability for sparse text
-
----
-
-## Reproducibility
-
-* Fixed `random_state=42` for splits and CV
-* Deterministic CV (`StratifiedKFold`)
-* Pinned environment via `requirements.txt`
+* **Pros:** non-linear; **Cons:** slower and weaker on sparse TF-IDF
 
 ---
 
 ## Troubleshooting
 
-* **Imbalanced labels:** check label counts; consider class weighting or stratified sampling
-* **Slow training:** reduce n-gram range, increase `min_df`, or sample subset for prototyping
-* **Overfitting:** tighten regularization (`C`↓ for LR/SVM), simplify features
-* **No internet corpora:** use PorterStemmer and sklearn stopwords (as in the notebook)
+* **Slow training:** reduce n-gram range to (1,1), increase `min_df`, or sample data for prototyping.
+* **Imbalance:** check label counts; use stratified splits; consider class weights / threshold tuning.
+* **Overfitting:** increase regularization (lower `C`), simplify features.
+* **Need probabilities for SVM:** use **CalibratedClassifierCV** (Platt scaling).
 
 ---
 
-## Save / Load Model
+## Next Steps
 
-```python
-import joblib
-joblib.dump((tfidf, clf), "models/tfidf_logreg.joblib")
-
-# later
-tfidf_loaded, clf_loaded = joblib.load("models/tfidf_logreg.joblib")
-```
+* Try **character n-grams** and/or tri-grams.
+* Add **probability calibration** and threshold tuning for precision/recall trade-offs.
+* Explore **transformer models** (DistilBERT) for potential gains.
+* Add cross-domain validation and error analysis (top false positives/negatives).
 
 ---
 
-## License & Use
+## License
 
-* For educational purposes only.
-* Ensure data privacy/compliance when handling user reviews.
+Educational use only. Ensure data privacy and compliance when handling user-generated content.
